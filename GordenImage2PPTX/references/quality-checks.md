@@ -24,3 +24,21 @@
 - 移动输出文件夹：相对素材路径仍能合成，不依赖原机器绝对路径。
 
 修复后重新检查受影响的页和图层，不机械地重新生成整本。
+
+## 真实办公软件渲染
+
+环境有 `soffice` 和 `pdftoppm` 时运行：
+
+```bash
+python3 scripts/render_office.py editable.pptx --out-dir qa/office
+# 若渲染器不能发现本机字体，显式传入实际存在的目录，例如macOS：
+python3 scripts/render_office.py editable.pptx --out-dir qa/office --font-dir /System/Library/Fonts/Supplemental
+```
+
+必须打开生成的PNG。字体在Pillow或系统字体列表里存在，不保证LibreOffice进程能发现它；大标题变成衬线字/换行时先核对渲染器字体搜索路径。不要通过缩小字号来掩盖字体替换。修复字体后根据真实基线回校文本，重新检查分隔线间距、标点是否掉到下一行。无阴影的原生形状同时清除显式与主题效果，避免Impress额外显示投影。
+
+工具缺失时记录not_run；不能把近似预览重命名为真实渲染。不能用原图覆盖页面来通过视觉检查。
+
+### 目标应用字体复核
+
+系统安装了字体、LibreOffice显示正常，也不保证WPS或PowerPoint的字距一致。用户指定应用时，必须在该应用打开最终PPTX检查大标题的字间距、换行和基线。出现字形挤压时，选择在目标应用实测稳定的替代字体并重新校准布局，记录字体变化；不要把测试候选版当作最终验证证据。未在Microsoft PowerPoint验证时明确说明。

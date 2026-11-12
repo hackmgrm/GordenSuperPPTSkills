@@ -93,6 +93,9 @@ class ComposerTests(unittest.TestCase):
                 prs = Presentation(out); slide = prs.slides[0]
                 self.assertEqual(len(slide.shapes), 3)  # two editable shapes plus text, no raster frame
                 self.assertEqual(slide.shapes[0].name, 'gold-vertical')
+                for shape in list(slide.shapes)[:2]:
+                    for effect in shape._element.xpath('./p:style/a:effectRef'):
+                        self.assertEqual(effect.get('idx'), '0')
                 self.assertEqual(str(slide.background.fill.fore_color.rgb), '112233')
                 self.assertAlmostEqual(slide.shapes[2].text_frame.paragraphs[0].line_spacing, 1.8)
                 with Image.open(base/'preview/slide_01.png') as preview:

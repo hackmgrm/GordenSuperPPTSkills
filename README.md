@@ -119,3 +119,5 @@ GordenSuperPPTSkills/
 - 使用方式与可编辑范围详见各技能，不向公共仓库提交客户图片或PPT。
 
 保留上游三个技能名称以兼容已有调用。通用 skill-creator 校验器会对旧名称的大写形式给出 hyphen-case 提示；本分支不因此更名。
+
+实际渲染检查：`GordenImage2PPTX/scripts/render_office.py` 使用 LibreOffice + Poppler 导出真实PPT页面，支持 `--font-dir`。仍需查看导出的图，并在用户的目标办公软件中检查字体、字距和遮挡；Pillow预览不能替代该步骤。

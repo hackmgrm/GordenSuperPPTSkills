@@ -132,6 +132,13 @@ def _set_fill_alpha(shape, opacity: float):
     srgb.append(alpha)
 
 
+def _disable_shadow(shape):
+    """Disable both explicit effects and theme effects (also for Impress)."""
+    shape.shadow.inherit = False
+    for effect in shape._element.xpath("./p:style/a:effectRef"):
+        effect.set("idx", "0")
+
+
 def _add_outer_shadow(shape, blur_pt=6.0, dist_pt=3.0, alpha=0.35):
     """Best-effort soft drop shadow for card-like shapes."""
     from pptx.oxml.ns import qn
@@ -221,7 +228,7 @@ def build_pptx(deck, out_path: Path):
                     Emu(int((fy + fh) * sh_emu)))
                 conn.line.color.rgb = _hex_to_rgb(shp.get("line", shp.get("fill", "#FFFFFF")))
                 conn.line.width = Pt(float(shp.get("line_width", 1.5)))
-                conn.shadow.inherit = False
+                _disable_shadow(conn)
                 if shp.get("name"):
                     conn.name = str(shp["name"])
                 continue
@@ -253,7 +260,7 @@ def build_pptx(deck, out_path: Path):
             if shp.get("shadow"):
                 _add_outer_shadow(shape)
             else:
-                shape.shadow.inherit = False
+                _disable_shadow(shape)
 
             if shp.get("rotation"):
                 shape.rotation = float(shp["rotation"])
