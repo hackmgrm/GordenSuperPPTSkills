@@ -3,13 +3,9 @@
 
 Final step of Part 2 (and the merge step of Part 1). Reads one layout file
 describing every slide as stacked layers (back to front):
-  background (full-bleed) -> whole-frame PNG -> icon/decoration PNGs (positioned) ->
-  text boxes
-and writes a real PowerPoint file where text stays editable and the frame/icons
-stay as movable pictures. The Image2PPTX workflow defaults to the full-slide
-`frame` field. If the user explicitly asks to split the frame into movable
-parts, the script also accepts `icons[]` entries with `role:"frame_part"`
-generated from `frame_parts/`.
+  solid background -> background image -> optional frame -> native shapes ->
+  icon/decoration PNGs -> editable text boxes.
+Simple geometry can stay native; complex frames/icons remain movable pictures.
 
 Also handles Part 1 "image deck" output: a slide with only `background` and no
 icons/texts becomes a full-bleed image slide.
@@ -58,7 +54,7 @@ def _load_deck(path: Path):
     data = json.loads(path.read_text(encoding="utf-8"))
     if "slides" not in data:
         # Treat the whole object as a single slide; lift deck-level keys out.
-        slide_keys = {"background", "frame", "shapes", "icons", "texts"}
+        slide_keys = {"background", "background_color", "frame", "shapes", "icons", "texts"}
         slide = {k: data[k] for k in slide_keys if k in data}
         deck = {k: v for k, v in data.items() if k not in slide_keys}
         deck["slides"] = [slide]
@@ -66,7 +62,8 @@ def _load_deck(path: Path):
     data.setdefault("slide_width_in", 13.333)
     data.setdefault("slide_height_in", 7.5)
     data.setdefault("units", "fraction")
-    data.setdefault("assets_dir", str(path.parent))
+    base = Path(data.get("assets_dir", "."))
+    data["assets_dir"] = str(base if base.is_absolute() else path.resolve().parent / base)
     return data
 
 
@@ -226,6 +223,10 @@ def build_pptx(deck, out_path: Path):
 
     for idx, sl in enumerate(deck["slides"], 1):
         slide = prs.slides.add_slide(blank)
+        if sl.get("background_color"):
+            slide.background.fill.solid()
+            slide.background.fill.fore_color.rgb = _hex_to_rgb(sl["background_color"])
+
 
         bg = sl.get("background")
         if bg:
@@ -256,10 +257,15 @@ def build_pptx(deck, out_path: Path):
                     Emu(int((fy + fh) * sh_emu)))
                 conn.line.color.rgb = _hex_to_rgb(shp.get("line", shp.get("fill", "#FFFFFF")))
                 conn.line.width = Pt(float(shp.get("line_width", 1.5)))
+                conn.shadow.inherit = False
+                if shp.get("name"):
+                    conn.name = str(shp["name"])
                 continue
 
             shape = slide.shapes.add_shape(shape_map.get(stype, MSO_SHAPE.ROUNDED_RECTANGLE),
                                            left, top, wid, hei)
+            if shp.get("name"):
+                shape.name = str(shp["name"])
             if stype == "rounded_rect" and "radius" in shp:
                 try:
                     shape.adjustments[0] = float(shp["radius"])
@@ -471,11 +477,16 @@ def render_previews(deck, preview_dir: Path):
     ref_h = float(deck.get("ref_height") or CH)
 
     preview_dir.mkdir(parents=True, exist_ok=True)
+    (preview_dir / "render-info.json").write_text(json.dumps({
+        "renderer": "Pillow", "approximate": True,
+        "limitations": ["font substitution", "rich-text wrapping", "shape rotation and shadows",
+                        "PowerPoint line metrics may differ"],
+    }, indent=2), encoding="utf-8")
     regular_path = _find_cjk_font(bold=False)
     bold_path = _find_cjk_font(bold=True)
 
     for idx, sl in enumerate(deck["slides"], 1):
-        canvas = Image.new("RGBA", (CW, CH), (255, 255, 255, 255))
+        canvas = Image.new("RGBA", (CW, CH), _hex_to_rgba(sl.get("background_color", "#FFFFFF")))
         bg = sl.get("background")
         if bg:
             bp = _resolve(assets_dir, bg)
@@ -507,8 +518,9 @@ def render_previews(deck, preview_dir: Path):
             lw = max(1, lw) if line else 0
             poly = _poly_points(stype, x0, y0, x1, y1)
             if stype == "line":
-                od.line([x0, y0, x1, y1], fill=line or (255, 255, 255, 255),
-                        width=max(1, lw or 2))
+                line_color = _hex_to_rgba(shp.get("line", shp.get("fill", "#FFFFFF")))
+                line_width = max(1, round(float(shp.get("line_width", 1.5)) * CH / sh_pt))
+                od.line([x0, y0, x1, y1], fill=line_color, width=line_width)
             elif stype in ("oval", "ellipse"):
                 od.ellipse([x0, y0, x1, y1], fill=fill, outline=line, width=lw)
             elif stype == "rounded_rect":
@@ -553,7 +565,7 @@ def render_previews(deck, preview_dir: Path):
             opacity = float(tx.get("opacity", 1.0))
             bx0, by0 = int(fx * CW), int(fy * CH)
             bw, bh = int(fw * CW), int(_frac(deck, tx, "h", "h", ref_h) * CH)
-            line_h = int(px * 1.3)
+            line_h = max(1, int(round(px * float(tx.get("line_spacing", 1.3)))))
             runs = tx.get("runs")
             if runs:
                 segs = []

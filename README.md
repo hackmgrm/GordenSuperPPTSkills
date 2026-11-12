@@ -1,15 +1,15 @@
 # Gorden Super PPT Skills（技能包）
 
-AI PPT赛道终结者，史上最最最强 PPT Skill！！！
+基于 [GordenSun/GordenSuperPPTSkills](https://github.com/GordenSun/GordenSuperPPTSkills) 的质量与可编辑性改进分支。
 
-使用GPT生成豪华的图片格式PPT，然后转换为**完全可编辑**的PPTX文件。
+使用图像模型生成图片格式 PPT，再按元素还原为混合可编辑 PPTX：文字与简单几何元素为原生对象，复杂视觉保留可移动图片。
 
 Skill全流程已拆成 **3 个独立技能**，可以拆分使用和优化：
 
 | 技能 | 作用 | 输入 → 输出 |
 |---|---|---|
 | **[GordenImagePPTGen](GordenImagePPTGen/SKILL.md)** | 生成「图片格式的 PPT」 | 主题/内容 → 每页 .png + 图片型 .pptx |
-| **[GordenImage2PPTX](GordenImage2PPTX/SKILL.md)** | 把「图片 PPT / 图片」还原成可编辑 pptx | 图片 → 可编辑 .pptx（背景+骨架+图标+文本 四层） |
+| **[GordenImage2PPTX](GordenImage2PPTX/SKILL.md)** | 把「图片 PPT / 图片」还原成可编辑 pptx | 图片 → 可编辑 .pptx（原生文字/形状 + 需要的图片层） |
 | **[GordenSuperPPTSkill](GordenSuperPPTSkill/SKILL.md)** | 打包编排前两者，依次执行 | 主题/内容 → 图片型 PPT + 可编辑 pptx |
 
 - 只要做图片版 PPT → **GordenImagePPTGen**
@@ -21,7 +21,7 @@ Skill全流程已拆成 **3 个独立技能**，可以拆分使用和优化：
 
 ![GordenImagePPTGen 生成的图片格式 PPT 示例](examples/example-Image-ppt.png)
 
-2、GordenImage2PPTX（Gorden的图片转PPTX技能）把图片转换为完全可编辑的PPTX文件
+2、GordenImage2PPTX（Gorden的图片转PPTX技能）把图片转换为混合可编辑的PPTX文件
 
 ![GordenImage2PPTX 转换后的可编辑 PPTX 示例](examples/example-editable-pptx.png)
 
@@ -30,7 +30,7 @@ Skill全流程已拆成 **3 个独立技能**，可以拆分使用和优化：
 
 第1步：把Github仓库地址发给Codex让他安装技能；
 
-第2步：按需使用。GPT 5.5模型，推理强度选"中"即可。
+第2步：按需使用。使用支持图像生成与视觉理解的模型。
 如果只生成图片格式PPT，提示词：
 ```
 使用GordenImagePPTGen技能，生成一个N页的PPT，内容为XXX，要求PPT要求豪华、信息密度高、排版复杂
@@ -46,11 +46,11 @@ Skill全流程已拆成 **3 个独立技能**，可以拆分使用和优化：
 
 图片转可编辑PPTX文件，比较费额度，转换1张图片大概耗费Plus订阅5小时额度的10%。
 
-框架图默认是整体的一张图，也支持拆分成一个个独立的框架模块图，提示词里明确告诉Codex即可。
+默认按元素选择表示方式：简单线条、卡片采用原生形状；复杂框架保留图片。可明确要求原版图片层模式或拆分框架。
 
 ## 原理讲解
 核心使用的是GPT的生图能力和视觉解析能力。
-大致步骤是：依次提取PPT图片的背景图、框架图、图标和装饰图、文本。最后在PPT里按坐标拼装起来。当然为了实现完美的效果，做了很多细节验证和约束规则。
+大致步骤是：依次提取PPT图片的背景图、框架图、图标和装饰图、文本。最后在PPT里按坐标拼装起来。结构、透明层边缘、内容与整页视觉分别检查；真实办公软件渲染可用时再验证，未验证项明确披露。
 使用过程中，你能看到GPT生成的过程图片。
 
 ### 背景图
@@ -109,3 +109,13 @@ GordenSuperPPTSkills/
 
 
 
+
+## 本分支的质量改进
+
+- 混合还原：不再强制每页生成四层，简单金线可独立编辑且没有绿幕污染。
+- `alpha_qa.py`：透明度、疑似色键残留、白/灰/黑底及前景放大检查；脚本不代替人工视觉判断。
+- 合成器相对路径以布局文件为基准，便于移动完整素材包；近似预览使用设定的行距。
+- 运行回归测试：`python3 -m unittest discover -s tests -v`。
+- 使用方式与可编辑范围详见各技能，不向公共仓库提交客户图片或PPT。
+
+保留上游三个技能名称以兼容已有调用。通用 skill-creator 校验器会对旧名称的大写形式给出 hyphen-case 提示；本分支不因此更名。

@@ -31,7 +31,7 @@
   python3 scripts/chroma_key.py --input <绿底图> --out <透明图.png> --force
   # 非绿底：--auto-key none --key-color "#ff00ff"
   ```
-- 它**只对绿色主导像素去溢出**，对红/藏青/灰/白是 no-op → **绝不褪色**；默认不腐蚀边缘 → **不丢细线/辉光**。这是为扁平信息图（框架/图标）专门调的。
+- 该预设尽量保留颜色和细线，但可能仍有色键残留或边缘损伤；转换阶段应按 GordenImage2PPTX 的多底色 QA 复核，不能仅凭预设名称判定质量。
 - 兜底：无该脚本时才用 Codex 的 `remove_chroma_key.py`，且**不要**叠 `--soft-matte --despill`（会把红色图标抠成灰白、吃掉框架线），用纯 `--auto-key border` 即可。
 - 抠完务必把透明图合到灰底自检：颜色对不对、线/辉光在不在、有无残边（见 image-to-pptx.md B5「抠图保真铁律」）。
 

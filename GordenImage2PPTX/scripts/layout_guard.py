@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 
 
-SLIDE_KEYS = {"background", "frame", "shapes", "icons", "texts"}
+SLIDE_KEYS = {"background", "background_color", "frame", "shapes", "icons", "texts"}
 
 
 def _die(msg: str, code: int = 2) -> None:
@@ -72,7 +72,7 @@ def _item_label(kind: str, idx: int, item: dict) -> str:
 
 
 def _iter_positioned(slide: dict):
-    for kind in ("icons", "texts"):
+    for kind in ("shapes", "icons", "texts"):
         for idx, item in enumerate(slide.get(kind, []), 1):
             yield kind, idx, item
 
@@ -275,8 +275,13 @@ def main() -> None:
                 warnings.append(f"{label}: missing valid source_bbox; placement cannot be audited")
                 continue
             bx, by, bw, bh = bbox
-            if bx < -2 or by < -2 or bw <= 0 or bh <= 0 or bx + bw > ref_w + 2 or by + bh > ref_h + 2:
-                errors.append(f"{label}: source_bbox {bbox} is outside ref canvas {ref_w:g}x{ref_h:g}")
+            is_line = kind == "shapes" and item.get("type") == "line"
+            if is_line:
+                invalid_box = (bw == 0 and bh == 0) or min(bx, bx + bw) < -2 or min(by, by + bh) < -2 or max(bx, bx + bw) > ref_w + 2 or max(by, by + bh) > ref_h + 2
+            else:
+                invalid_box = bx < -2 or by < -2 or bw <= 0 or bh <= 0 or bx + bw > ref_w + 2 or by + bh > ref_h + 2
+            if invalid_box:
+                errors.append(f"{label}: source_bbox {bbox} is outside ref canvas or degenerate ({ref_w:g}x{ref_h:g})")
             ok, delta = _check_box_match(item, bbox, units, ref_w, ref_h, args.fraction_tol, args.px_tol)
             if not ok:
                 msg = f"{label}: x/y/w/h do not match source_bbox/ref (max delta {delta:.5g})"
