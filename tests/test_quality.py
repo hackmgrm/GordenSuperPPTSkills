@@ -58,6 +58,16 @@ class AlphaTests(unittest.TestCase):
                     self.assertEqual(composite.getpixel((10, 10)), (200, 80, 10))
 
 
+class ChromaTests(unittest.TestCase):
+    def test_magenta_key_preserves_blue_and_orange(self):
+        chroma = module(ROOT / 'GordenImage2PPTX/scripts/chroma_key.py', 'chroma')
+        source = np.array([[[0, 45, 150, 255], [255, 100, 0, 255], [255, 0, 255, 255]]], dtype=np.uint8)
+        out, _ = chroma.remove_key(source, (255, 0, 255), 24, 86, True, 0, 0,
+                                  True, 0, 1, 0, 0, 255, .2)
+        np.testing.assert_array_equal(out[0,:2], source[0,:2])
+        self.assertEqual(out[0,2,3], 0)
+
+
 class ComposerTests(unittest.TestCase):
     def test_both_standalone_composers(self):
         for skill in ['GordenImage2PPTX', 'GordenImagePPTGen']:

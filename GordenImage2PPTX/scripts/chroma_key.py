@@ -141,10 +141,12 @@ def remove_key(
         # Anchor = strongest non-key channel; for multi-channel keys use the per-pixel max.
         anchor = (np.max(out_rgb[..., non_spill], axis=2) if non_spill
                   else np.zeros((h, w), np.float32))
+        # Multi-channel keys must dominate jointly. With magenta, blue alone
+        # is legitimate foreground, not spill; capping B everywhere destroys it.
+        key_dominant = np.min(out_rgb[..., spill], axis=2) > anchor
         for c in spill:
-            # Pull the key channel down to the anchor only where it exceeds it
-            # (key-dominant). No-op for reds/navy/grey/white -> colors preserved.
-            out_rgb[..., c] = np.minimum(out_rgb[..., c], anchor)
+            out_rgb[..., c] = np.where(
+                key_dominant, np.minimum(out_rgb[..., c], anchor), out_rgb[..., c])
 
     if alpha_gamma > 0 and alpha_gamma != 1.0:
         # gamma < 1 raises semi-transparent edge alpha, preserving thin strokes
