@@ -27,7 +27,7 @@
 
 普通纯色字母/数字优先文本框。渐变本身不自动等于不可编辑艺术字；按字体形状、用户编辑需求和可用工具判断。
 图片图标用 imagegen 从当前源图提取，少量独立资产可直接透明输出。多个资产排网格时逐项编号，格内留白，不画格线。记录所有资产的去向，避免背景、框架、图标三处重复出现。
-用户原 LOGO 和二维码直接用原文件。不要生成看似真实却不能扫描的二维码。
+用户原 LOGO 和二维码直接用原文件；若只在PDF或源图中提供，可在边界明确且不含其它内容时从原文件无损提取该品牌区域，记录出处与区域，不重绘或生成品牌。不要生成看似真实却不能扫描的二维码。
 
 ## B5：去底与透明层检查
 
@@ -78,7 +78,7 @@ python3 scripts/alpha_qa.py frame.png --out-dir qa/frame --key-color '#00ff00' -
 - shapes 支持 rect、rounded_rect、oval/ellipse、line、chevron、parallelogram、trapezoid、diamond。`line` 的 w/h 是终点相对起点的有符号偏移，水平/竖直线允许为0；粗直条可用 rect。
 - 形状字段：fill、opacity（填充）、line、line_width（pt）、radius、rotation、shadow。旋转和阴影仅在真实PPT渲染中可靠验证；简易预览不精确支持。
 - 文字字号可用 size（pt）、size_ratio（源文字像素高/源图高）、size_pct、size_px。换算：`pt=size_ratio×slide_height_in×72`。不要把缩略图像素当源图像素。
-- 文本支持 bold、font、color、align、valign、line_spacing（倍数）与 runs 混合样式。普通正文不要全部加粗；本地简易预览对 runs 换行和字体替换仍有限制。
+- 文本支持 bold、font、color、align、valign、line_spacing（倍数）与 runs 混合样式。可选 `font_file` 指向本机字体文件，供近似预览使用（PPT仍用 font 名称，不嵌入字体；迁移后需调整该可选路径）。普通正文不要全部加粗；本地简易预览对 runs 换行和字体替换仍有限制。
 
 ## B7：文字核对
 

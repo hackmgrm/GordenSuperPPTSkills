@@ -554,7 +554,7 @@ def render_previews(deck, preview_dir: Path):
             size_pt = _text_size_pt(tx, sh_pt, ref_h)
             px = max(8, int(round(size_pt * CH / sh_pt)))
             bold = bool(tx.get("bold", False))
-            fpath = (bold_path if bold else regular_path) or regular_path
+            fpath = tx.get("font_file") or (bold_path if bold else regular_path) or regular_path
             try:
                 font = ImageFont.truetype(fpath, px) if fpath else ImageFont.load_default()
             except Exception:
@@ -573,7 +573,7 @@ def render_previews(deck, preview_dir: Path):
                 for rinfo in runs:
                     rb = bool(rinfo.get("bold", bold))
                     rpx = max(8, int(round(_text_size_pt(rinfo, sh_pt, ref_h, default=size_pt) * CH / sh_pt)))
-                    rfp = (bold_path if rb else regular_path) or regular_path
+                    rfp = rinfo.get("font_file", tx.get("font_file")) or (bold_path if rb else regular_path) or regular_path
                     try:
                         rfont = ImageFont.truetype(rfp, rpx) if rfp else ImageFont.load_default()
                     except Exception:
